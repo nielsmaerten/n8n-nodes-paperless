@@ -48,7 +48,6 @@ export const description: INodeProperties[] = [
 			},
 		],
 		placeholder: 'ID of the tag',
-		required: false,
 		type: 'resourceLocator',
 	},
 ];
