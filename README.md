@@ -2,12 +2,22 @@
 
 ![Banner image](https://user-images.githubusercontent.com/10284570/173569848-c624317f-42b1-45a6-ab09-f0ea3c247648.png)
 
+### This is a fork of [chezmoidotsh/n8n-nodes-paperless](https://github.com/chezmoidotsh/n8n-nodes-paperless)
+I'm making a few minor changes:
+
+- Replaced pnpm with npm for package installation - this fixes a few compatibility issues with dockerized n8n instances (using pnpm inside a docker container can be tricky).
+- Fixed the url to the Paperless icon so it displays correctly in the n8n node selection menu.
+- Added "filter by tags" functionality to the "List Documents" operation.
+
+Unless you're running into the same issues as I was, you may be better off using the original repository. To @xunleii: thank you very much for your work, and feel free to incorporate any of these changes back into your original repo if you find them useful!
+
+
 # n8n-nodes-paperless
 
 <!-- trunk-ignore-begin(markdownlint/MD033) -->
 <div align="center">
 	<img 
-		src="https://raw.githubusercontent.com/chezmoi-sh/n8n-nodes-paperless/refs/heads/main/nodes/Paperless/paperless-ngx.svg"
+		src="nodes/Paperless/paperless-ngx.svg"
 		alt="Paperless Icon"
 		height="50px"
 	>
@@ -16,20 +26,31 @@
 
 This is a n8n community node. It lets you use [Paperless-ngx](https://docs.paperless-ngx.com/) in your n8n workflows.
 
-Paperless-ngx is a document management system that transforms your physical documents into a searchable online archive so you can keep your paper documents, but lose the cabinet.
-
-[Installation](#installation)  
-[Operations](#operations)  
-[Credentials](#credentials)  
-[Compatibility](#compatibility)  
-[Resources](#resources)
-
 ## Installation
 
-Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation.
+- Connect to the shell of your n8n instance's container:
 
-> [!NOTE]
-> This node requires the `form-data` package for handling multipart/form-data requests. It will be automatically installed as a dependency if not already present in your n8n installation.
+	```bash
+	docker exec -it <n8n-container-name> /bin/sh
+	```
+
+- Navigate to the custom nodes directory:
+
+	```bash
+	cd /home/node/.n8n/nodes
+	```
+
+- Install this node directly from GitHub:
+
+	```bash
+	npm install github:nielsmaertens/n8n-nodes-paperless
+	```
+
+- Restart your n8n instance.
+
+Refer to the [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/) in the n8n community nodes documentation for more details.
+
+
 
 ## Operations
 
@@ -61,6 +82,7 @@ The node supports the following resources and operations:
 - Get document preview
 - Get document share links
 - List all documents
+  - ✨New: Filter by tag
 
 ### Document Metadata
 
