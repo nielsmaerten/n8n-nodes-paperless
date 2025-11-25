@@ -118,8 +118,9 @@ export const description: INodeProperties[] = [
 							{
 								type: 'regex',
 								properties: {
-									regex: '^[1-9][0-9]*$',
-									errorMessage: 'The ID must be a positive integer',
+									regex: '^[1-9][0-9]*(?:\\s*,\\s*[1-9][0-9]*)*$',
+									errorMessage:
+										'The IDs must be a comma-separated list of positive integers (e.g. 1,2,3)',
 								},
 							},
 						],
@@ -292,11 +293,11 @@ export const description: INodeProperties[] = [
 											searchable: true,
 										},
 									},
-									{
-										displayName: 'By ID',
-										name: 'id',
-										placeholder: `Enter Tag ID...`,
-										type: 'string',
+					{
+						displayName: 'By ID',
+						name: 'id',
+						placeholder: `Enter Tag ID(s)...`,
+						type: 'string',
 										validation: [
 											{
 												type: 'regex',
@@ -338,8 +339,31 @@ export async function execute(
 	const endpoint = `/documents/${id}/`;
 
 	const updateFields = this.getNodeParameter('update_fields', itemIndex, {}) as any;
+	const tagsProvided = Array.isArray(updateFields.tags?.values);
 
-	const body = {
+	const tags = tagsProvided
+		? updateFields.tags.values.reduce((acc: number[], tag: any) => {
+				const value = tag.tag?.value;
+
+				if (typeof value === 'string') {
+					const ids = value
+						.split(',')
+						.map((tagId: string) => tagId.trim())
+						.filter((tagId: string) => tagId !== '')
+						.map((tagId: string) => Number(tagId));
+
+					return acc.concat(ids);
+				}
+
+				if (value !== undefined && value !== null) {
+					return acc.concat(value);
+				}
+
+				return acc;
+		  }, [] as number[])
+		: undefined;
+
+	const body: Record<string, any> = {
 		archive_serial_number: updateFields.archive_serial_number,
 		correspondent: updateFields.correspondent?.value,
 		created: updateFields.created,
@@ -349,9 +373,13 @@ export async function execute(
 		})),
 		document_type: updateFields.document_type?.value,
 		storage_path: updateFields.storage_path?.value,
-		tags: updateFields.tags?.values.map((tag: any) => tag.tag.value),
 		title: updateFields.title,
 	};
+
+	if (tagsProvided) {
+		body.tags = tags ?? [];
+		await apiRequest.call(this, itemIndex, 'PATCH', endpoint, { tags: [] });
+	}
 
 	const response = (await apiRequest.call(this, itemIndex, 'PATCH', endpoint, body)) as any;
 

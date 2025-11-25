@@ -114,8 +114,8 @@ exports.description = [
                             {
                                 type: 'regex',
                                 properties: {
-                                    regex: '^[1-9][0-9]*$',
-                                    errorMessage: 'The ID must be a positive integer',
+                                    regex: '^[1-9][0-9]*(?:\\s*,\\s*[1-9][0-9]*)*$',
+                                    errorMessage: 'The IDs must be a comma-separated list of positive integers (e.g. 1,2,3)',
                                 },
                             },
                         ],
@@ -291,7 +291,7 @@ exports.description = [
                                     {
                                         displayName: 'By ID',
                                         name: 'id',
-                                        placeholder: `Enter Tag ID...`,
+                                        placeholder: `Enter Tag ID(s)...`,
                                         type: 'string',
                                         validation: [
                                             {
@@ -330,19 +330,41 @@ async function execute(itemIndex) {
     const id = this.getNodeParameter('id', itemIndex).value;
     const endpoint = `/documents/${id}/`;
     const updateFields = this.getNodeParameter('update_fields', itemIndex, {});
+    const tagsProvided = Array.isArray((_a = updateFields.tags) === null || _a === void 0 ? void 0 : _a.values);
+    const tags = tagsProvided
+        ? updateFields.tags.values.reduce((acc, tag) => {
+            var _a;
+            const value = (_a = tag.tag) === null || _a === void 0 ? void 0 : _a.value;
+            if (typeof value === 'string') {
+                const ids = value
+                    .split(',')
+                    .map((tagId) => tagId.trim())
+                    .filter((tagId) => tagId !== '')
+                    .map((tagId) => Number(tagId));
+                return acc.concat(ids);
+            }
+            if (value !== undefined && value !== null) {
+                return acc.concat(value);
+            }
+            return acc;
+        }, [])
+        : undefined;
     const body = {
         archive_serial_number: updateFields.archive_serial_number,
-        correspondent: (_a = updateFields.correspondent) === null || _a === void 0 ? void 0 : _a.value,
+        correspondent: (_b = updateFields.correspondent) === null || _b === void 0 ? void 0 : _b.value,
         created: updateFields.created,
-        custom_fields: (_b = updateFields.custom_fields) === null || _b === void 0 ? void 0 : _b.values.map((customField) => ({
+        custom_fields: (_c = updateFields.custom_fields) === null || _c === void 0 ? void 0 : _c.values.map((customField) => ({
             field: customField.field.value,
             value: customField.value,
         })),
-        document_type: (_c = updateFields.document_type) === null || _c === void 0 ? void 0 : _c.value,
-        storage_path: (_d = updateFields.storage_path) === null || _d === void 0 ? void 0 : _d.value,
-        tags: (_e = updateFields.tags) === null || _e === void 0 ? void 0 : _e.values.map((tag) => tag.tag.value),
+        document_type: (_d = updateFields.document_type) === null || _d === void 0 ? void 0 : _d.value,
+        storage_path: (_e = updateFields.storage_path) === null || _e === void 0 ? void 0 : _e.value,
         title: updateFields.title,
     };
+    if (tagsProvided) {
+        body.tags = tags !== null && tags !== void 0 ? tags : [];
+        await transport_1.apiRequest.call(this, itemIndex, 'PATCH', endpoint, { tags: [] });
+    }
     const response = (await transport_1.apiRequest.call(this, itemIndex, 'PATCH', endpoint, body));
     return { json: { results: [response] } };
 }
