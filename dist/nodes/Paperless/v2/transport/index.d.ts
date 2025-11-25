@@ -1,0 +1,3 @@
+import { IDataObject, IExecuteFunctions, IHttpRequestMethods, ILoadOptionsFunctions, IRequestOptions } from 'n8n-workflow';
+export declare function apiRequest(this: IExecuteFunctions | ILoadOptionsFunctions, itemIndex: number, method: IHttpRequestMethods, endpoint: string, body?: IDataObject, query?: IDataObject, option?: IRequestOptions): Promise<unknown>;
+export declare function apiRequestPaginated(this: IExecuteFunctions | ILoadOptionsFunctions, itemIndex: number, method: IHttpRequestMethods, endpoint: string, body?: IDataObject, query?: IDataObject, option?: IRequestOptions): Promise<unknown[]>;

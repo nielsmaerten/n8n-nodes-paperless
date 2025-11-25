@@ -1,0 +1,13 @@
+import { INodeProperties } from 'n8n-workflow';
+import * as create from './create.operation';
+import * as get from './get.operation';
+import * as get_history from './get_history.operation';
+import * as get_metadata from './get_metadata.operation';
+import * as get_metadata_suggestions from './get_metadata_suggestions.operation';
+import * as get_preview from './get_preview.operation';
+import * as get_sharelink from './get_sharelink.operation';
+import * as list from './list.operation';
+import * as remove from './remove.operation';
+import * as update from './update.operation';
+export { create, get, get_history, get_metadata, get_metadata_suggestions, get_preview, get_sharelink, list, remove, update, };
+export declare const description: INodeProperties[];
