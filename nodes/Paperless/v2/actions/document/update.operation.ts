@@ -349,13 +349,16 @@ export async function execute(
 		})),
 		document_type: updateFields.document_type?.value,
 		storage_path: updateFields.storage_path?.value,
-		// Support both multiple Tag entries and a single Tag entry that is itself an array (when users bind an array expression)
-		tags: (updateFields.tags?.values ?? [])
-			.flatMap((tag: any) => {
-				const value = tag.tag?.value ?? tag.tag;
-				return Array.isArray(value) ? value : [value];
-			})
-			.filter((tagId: any) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0),
+		// Only include tags when provided. Flatten supports both multiple Tag entries and a single Tag entry bound to an array.
+		tags: Object.prototype.hasOwnProperty.call(updateFields, 'tags')
+			? (Array.isArray(updateFields.tags?.values) ? updateFields.tags.values : [updateFields.tags?.values])
+					.flatMap((tag: any) => {
+						// Accept raw IDs, resource locator objects, or nested arrays.
+						const value = tag?.tag?.value ?? tag?.tag ?? tag;
+						return Array.isArray(value) ? value : [value];
+					})
+					.filter((tagId: any) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0)
+			: undefined,
 		title: updateFields.title,
 	};
 
