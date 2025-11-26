@@ -86,21 +86,20 @@ export async function execute(
 		`${endpoint}/preview/`,
 		undefined,
 		undefined,
-		{ resolveWithFullResponse: true },
+		{ resolveWithFullResponse: true, json: false, encoding: null },
 	)) as any;
 	const filename =
 		preview.headers['content-disposition']
 			?.match(/filename="(?:b['"])?([^"]+)(?:['"])?"/)?.[1]
 			?.replace(/^['"]|['"]$/g, '') ?? `${id}.pdf`;
+	const data = Buffer.isBuffer(preview.body)
+		? preview.body
+		: Buffer.from(preview.body as string, 'binary');
 
 	return {
 		json: {},
 		binary: {
-			data: await this.helpers.prepareBinaryData(
-				Buffer.from(preview.body),
-				filename,
-				'application/pdf',
-			),
+			data: await this.helpers.prepareBinaryData(data, filename, 'application/pdf'),
 		},
 	};
 }
