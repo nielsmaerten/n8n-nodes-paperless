@@ -340,13 +340,15 @@ async function execute(itemIndex) {
         })),
         document_type: (_c = updateFields.document_type) === null || _c === void 0 ? void 0 : _c.value,
         storage_path: (_d = updateFields.storage_path) === null || _d === void 0 ? void 0 : _d.value,
-        tags: ((_f = (_e = updateFields.tags) === null || _e === void 0 ? void 0 : _e.values) !== null && _f !== void 0 ? _f : [])
-            .flatMap((tag) => {
-            var _a, _b;
-            const value = (_b = (_a = tag.tag) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : tag.tag;
-            return Array.isArray(value) ? value : [value];
-        })
-            .filter((tagId) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0),
+        tags: Object.prototype.hasOwnProperty.call(updateFields, 'tags')
+            ? (Array.isArray((_e = updateFields.tags) === null || _e === void 0 ? void 0 : _e.values) ? updateFields.tags.values : [(_f = updateFields.tags) === null || _f === void 0 ? void 0 : _f.values])
+                .flatMap((tag) => {
+                var _a, _b, _c;
+                const value = (_c = (_b = (_a = tag === null || tag === void 0 ? void 0 : tag.tag) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : tag === null || tag === void 0 ? void 0 : tag.tag) !== null && _c !== void 0 ? _c : tag;
+                return Array.isArray(value) ? value : [value];
+            })
+                .filter((tagId) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0)
+            : undefined,
         title: updateFields.title,
     };
     const response = (await transport_1.apiRequest.call(this, itemIndex, 'PATCH', endpoint, body));
