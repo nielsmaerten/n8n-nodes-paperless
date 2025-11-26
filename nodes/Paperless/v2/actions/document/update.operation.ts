@@ -349,7 +349,13 @@ export async function execute(
 		})),
 		document_type: updateFields.document_type?.value,
 		storage_path: updateFields.storage_path?.value,
-		tags: updateFields.tags?.values.map((tag: any) => tag.tag.value),
+		// Support both multiple Tag entries and a single Tag entry that is itself an array (when users bind an array expression)
+		tags: (updateFields.tags?.values ?? [])
+			.flatMap((tag: any) => {
+				const value = tag.tag?.value ?? tag.tag;
+				return Array.isArray(value) ? value : [value];
+			})
+			.filter((tagId: any) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0),
 		title: updateFields.title,
 	};
 
