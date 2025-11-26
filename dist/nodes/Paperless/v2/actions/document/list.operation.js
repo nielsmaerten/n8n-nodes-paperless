@@ -45,7 +45,6 @@ exports.description = [
             },
         ],
         placeholder: 'ID of the tag',
-        required: false,
         type: 'resourceLocator',
     },
 ];

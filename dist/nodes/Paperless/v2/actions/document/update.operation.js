@@ -326,7 +326,7 @@ exports.description = [
     },
 ];
 async function execute(itemIndex) {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f;
     const id = this.getNodeParameter('id', itemIndex).value;
     const endpoint = `/documents/${id}/`;
     const updateFields = this.getNodeParameter('update_fields', itemIndex, {});
@@ -340,7 +340,13 @@ async function execute(itemIndex) {
         })),
         document_type: (_c = updateFields.document_type) === null || _c === void 0 ? void 0 : _c.value,
         storage_path: (_d = updateFields.storage_path) === null || _d === void 0 ? void 0 : _d.value,
-        tags: (_e = updateFields.tags) === null || _e === void 0 ? void 0 : _e.values.map((tag) => tag.tag.value),
+        tags: ((_f = (_e = updateFields.tags) === null || _e === void 0 ? void 0 : _e.values) !== null && _f !== void 0 ? _f : [])
+            .flatMap((tag) => {
+            var _a, _b;
+            const value = (_b = (_a = tag.tag) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : tag.tag;
+            return Array.isArray(value) ? value : [value];
+        })
+            .filter((tagId) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0),
         title: updateFields.title,
     };
     const response = (await transport_1.apiRequest.call(this, itemIndex, 'PATCH', endpoint, body));
