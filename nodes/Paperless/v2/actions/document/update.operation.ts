@@ -284,7 +284,7 @@ export const description: INodeProperties[] = [
 									{
 										displayName: 'From List',
 										name: 'list',
-										placeholder: `Select a Tag...`,
+										placeholder: `Select a Tag to add...`,
 										type: 'list',
 										typeOptions: {
 											searchListMethod: 'tagSearch',
@@ -295,7 +295,7 @@ export const description: INodeProperties[] = [
 									{
 										displayName: 'By ID',
 										name: 'id',
-										placeholder: `Enter Tag ID...`,
+										placeholder: `Enter Tag ID to add...`,
 										type: 'string',
 										validation: [
 											{
@@ -307,6 +307,21 @@ export const description: INodeProperties[] = [
 											},
 										],
 									},
+									{
+										displayName: 'By Array of IDs',
+										name: 'array',
+										placeholder: `Enter Tag IDs as an Array...`,
+										type: 'string',
+										hint: 'Array of tag IDs in JSON format, e.g. {{[1, 2]}}. Existing tags will be overwritten.',
+										validation: [
+											{
+												type: 'json',
+												properties: {
+													errorMessage: 'The value must be a valid JSON array',
+												},
+											},
+										],
+									}
 								],
 								type: 'resourceLocator',
 							},
@@ -340,12 +355,15 @@ export async function execute(
 	const updateFields = this.getNodeParameter('update_fields', itemIndex, {}) as any;
 
 	const hasCustomFields = Object.prototype.hasOwnProperty.call(updateFields, 'custom_fields');
+	const hasTags = Object.prototype.hasOwnProperty.call(updateFields, 'tags');
+	let existingDocument = null;
+	if (hasCustomFields || hasTags) {
+		existingDocument = (await apiRequest.call(this, itemIndex, 'GET', endpoint)) as any;
+	}
 
 	let customFields;
 
 	if (hasCustomFields) {
-		const existingDocument = (await apiRequest.call(this, itemIndex, 'GET', endpoint)) as any;
-
 		const mergedCustomFields = new Map<number, { field: number; value: any }>();
 
 		(existingDocument?.custom_fields ?? []).forEach((customField: any) => {
@@ -368,6 +386,21 @@ export async function execute(
 		customFields = Array.from(mergedCustomFields.values());
 	}
 
+	let tags;
+	if (hasTags) {
+		const tagInputs = (updateFields.tags?.values ?? []).map((tag: any) => tag?.tag?.value ?? tag?.tag ?? tag);
+		const overwriteTags = tagInputs.some((tagInput: any) => Array.isArray(tagInput));
+
+		const incomingTags = tagInputs.flatMap((tagInput: any) => (Array.isArray(tagInput) ? tagInput : [tagInput])).filter(
+			(tagId: any) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0,
+		);
+
+		const baseTags = overwriteTags ? [] : existingDocument?.tags ?? [];
+
+		// Additive by default; explicit array input overwrites.
+		tags = Array.from(new Set([...baseTags, ...incomingTags]));
+	}
+
 	const body = {
 		archive_serial_number: updateFields.archive_serial_number,
 		correspondent: updateFields.correspondent?.value,
@@ -375,16 +408,7 @@ export async function execute(
 		custom_fields: customFields,
 		document_type: updateFields.document_type?.value,
 		storage_path: updateFields.storage_path?.value,
-		// Only include tags when provided. Flatten supports both multiple Tag entries and a single Tag entry bound to an array.
-		tags: Object.prototype.hasOwnProperty.call(updateFields, 'tags')
-			? (Array.isArray(updateFields.tags?.values) ? updateFields.tags.values : [updateFields.tags?.values])
-					.flatMap((tag: any) => {
-						// Accept raw IDs, resource locator objects, or nested arrays.
-						const value = tag?.tag?.value ?? tag?.tag ?? tag;
-						return Array.isArray(value) ? value : [value];
-					})
-					.filter((tagId: any) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0)
-			: undefined,
+		tags,
 		title: updateFields.title,
 	};
 

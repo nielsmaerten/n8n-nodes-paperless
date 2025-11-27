@@ -280,7 +280,7 @@ exports.description = [
                                     {
                                         displayName: 'From List',
                                         name: 'list',
-                                        placeholder: `Select a Tag...`,
+                                        placeholder: `Select a Tag to add...`,
                                         type: 'list',
                                         typeOptions: {
                                             searchListMethod: 'tagSearch',
@@ -291,7 +291,7 @@ exports.description = [
                                     {
                                         displayName: 'By ID',
                                         name: 'id',
-                                        placeholder: `Enter Tag ID...`,
+                                        placeholder: `Enter Tag ID to add...`,
                                         type: 'string',
                                         validation: [
                                             {
@@ -303,6 +303,21 @@ exports.description = [
                                             },
                                         ],
                                     },
+                                    {
+                                        displayName: 'By Array of IDs',
+                                        name: 'array',
+                                        placeholder: `Enter Tag IDs as an Array...`,
+                                        type: 'string',
+                                        hint: 'Array of tag IDs in JSON format, e.g. {{[1, 2]}}. Existing tags will be overwritten.',
+                                        validation: [
+                                            {
+                                                type: 'json',
+                                                properties: {
+                                                    errorMessage: 'The value must be a valid JSON array',
+                                                },
+                                            },
+                                        ],
+                                    }
                                 ],
                                 type: 'resourceLocator',
                             },
@@ -326,14 +341,18 @@ exports.description = [
     },
 ];
 async function execute(itemIndex) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     const id = this.getNodeParameter('id', itemIndex).value;
     const endpoint = `/documents/${id}/`;
     const updateFields = this.getNodeParameter('update_fields', itemIndex, {});
     const hasCustomFields = Object.prototype.hasOwnProperty.call(updateFields, 'custom_fields');
+    const hasTags = Object.prototype.hasOwnProperty.call(updateFields, 'tags');
+    let existingDocument = null;
+    if (hasCustomFields || hasTags) {
+        existingDocument = (await transport_1.apiRequest.call(this, itemIndex, 'GET', endpoint));
+    }
     let customFields;
     if (hasCustomFields) {
-        const existingDocument = (await transport_1.apiRequest.call(this, itemIndex, 'GET', endpoint));
         const mergedCustomFields = new Map();
         ((_a = existingDocument === null || existingDocument === void 0 ? void 0 : existingDocument.custom_fields) !== null && _a !== void 0 ? _a : []).forEach((customField) => {
             mergedCustomFields.set(customField.field, customField);
@@ -349,22 +368,22 @@ async function execute(itemIndex) {
         });
         customFields = Array.from(mergedCustomFields.values());
     }
+    let tags;
+    if (hasTags) {
+        const tagInputs = ((_e = (_d = updateFields.tags) === null || _d === void 0 ? void 0 : _d.values) !== null && _e !== void 0 ? _e : []).map((tag) => { var _a, _b, _c; return (_c = (_b = (_a = tag === null || tag === void 0 ? void 0 : tag.tag) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : tag === null || tag === void 0 ? void 0 : tag.tag) !== null && _c !== void 0 ? _c : tag; });
+        const overwriteTags = tagInputs.some((tagInput) => Array.isArray(tagInput));
+        const incomingTags = tagInputs.flatMap((tagInput) => (Array.isArray(tagInput) ? tagInput : [tagInput])).filter((tagId) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0);
+        const baseTags = overwriteTags ? [] : (_f = existingDocument === null || existingDocument === void 0 ? void 0 : existingDocument.tags) !== null && _f !== void 0 ? _f : [];
+        tags = Array.from(new Set([...baseTags, ...incomingTags]));
+    }
     const body = {
         archive_serial_number: updateFields.archive_serial_number,
-        correspondent: (_d = updateFields.correspondent) === null || _d === void 0 ? void 0 : _d.value,
+        correspondent: (_g = updateFields.correspondent) === null || _g === void 0 ? void 0 : _g.value,
         created: updateFields.created,
         custom_fields: customFields,
-        document_type: (_e = updateFields.document_type) === null || _e === void 0 ? void 0 : _e.value,
-        storage_path: (_f = updateFields.storage_path) === null || _f === void 0 ? void 0 : _f.value,
-        tags: Object.prototype.hasOwnProperty.call(updateFields, 'tags')
-            ? (Array.isArray((_g = updateFields.tags) === null || _g === void 0 ? void 0 : _g.values) ? updateFields.tags.values : [(_h = updateFields.tags) === null || _h === void 0 ? void 0 : _h.values])
-                .flatMap((tag) => {
-                var _a, _b, _c;
-                const value = (_c = (_b = (_a = tag === null || tag === void 0 ? void 0 : tag.tag) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : tag === null || tag === void 0 ? void 0 : tag.tag) !== null && _c !== void 0 ? _c : tag;
-                return Array.isArray(value) ? value : [value];
-            })
-                .filter((tagId) => tagId !== undefined && tagId !== null && `${tagId}`.length > 0)
-            : undefined,
+        document_type: (_h = updateFields.document_type) === null || _h === void 0 ? void 0 : _h.value,
+        storage_path: (_j = updateFields.storage_path) === null || _j === void 0 ? void 0 : _j.value,
+        tags,
         title: updateFields.title,
     };
     const response = (await transport_1.apiRequest.call(this, itemIndex, 'PATCH', endpoint, body));
