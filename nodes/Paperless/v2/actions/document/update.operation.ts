@@ -93,6 +93,16 @@ export const description: INodeProperties[] = [
 				type: 'number',
 			},
 			{
+				displayName: 'Content',
+				name: 'content',
+				default: '',
+				description: 'Plain text content for the document',
+				type: 'string',
+				typeOptions: {
+					rows: 5,
+				},
+			},
+			{
 				displayName: 'Correspondent',
 				name: 'correspondent',
 				default: { mode: 'list', value: '' },
@@ -403,6 +413,7 @@ export async function execute(
 
 	const body = {
 		archive_serial_number: updateFields.archive_serial_number,
+		content: updateFields.content,
 		correspondent: updateFields.correspondent?.value,
 		created: updateFields.created,
 		custom_fields: customFields,

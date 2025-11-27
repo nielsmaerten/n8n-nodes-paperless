@@ -89,6 +89,16 @@ exports.description = [
                 type: 'number',
             },
             {
+                displayName: 'Content',
+                name: 'content',
+                default: '',
+                description: 'Plain text content for the document',
+                type: 'string',
+                typeOptions: {
+                    rows: 5,
+                },
+            },
+            {
                 displayName: 'Correspondent',
                 name: 'correspondent',
                 default: { mode: 'list', value: '' },
@@ -378,6 +388,7 @@ async function execute(itemIndex) {
     }
     const body = {
         archive_serial_number: updateFields.archive_serial_number,
+        content: updateFields.content,
         correspondent: (_g = updateFields.correspondent) === null || _g === void 0 ? void 0 : _g.value,
         created: updateFields.created,
         custom_fields: customFields,
