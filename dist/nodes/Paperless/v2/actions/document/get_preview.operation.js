@@ -72,12 +72,15 @@ async function execute(itemIndex) {
     var _a, _b, _c, _d;
     const id = this.getNodeParameter('id', itemIndex).value;
     const endpoint = `/documents/${id}`;
-    const preview = (await transport_1.apiRequest.call(this, itemIndex, 'GET', `${endpoint}/preview/`, undefined, undefined, { resolveWithFullResponse: true }));
+    const preview = (await transport_1.apiRequest.call(this, itemIndex, 'GET', `${endpoint}/preview/`, undefined, undefined, { resolveWithFullResponse: true, json: false, encoding: null }));
     const filename = (_d = (_c = (_b = (_a = preview.headers['content-disposition']) === null || _a === void 0 ? void 0 : _a.match(/filename="(?:b['"])?([^"]+)(?:['"])?"/)) === null || _b === void 0 ? void 0 : _b[1]) === null || _c === void 0 ? void 0 : _c.replace(/^['"]|['"]$/g, '')) !== null && _d !== void 0 ? _d : `${id}.pdf`;
+    const data = Buffer.isBuffer(preview.body)
+        ? preview.body
+        : Buffer.from(preview.body, 'binary');
     return {
         json: {},
         binary: {
-            data: await this.helpers.prepareBinaryData(Buffer.from(preview.body), filename, 'application/pdf'),
+            data: await this.helpers.prepareBinaryData(data, filename, 'application/pdf'),
         },
     };
 }

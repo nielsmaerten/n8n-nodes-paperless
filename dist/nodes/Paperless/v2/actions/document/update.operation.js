@@ -326,22 +326,38 @@ exports.description = [
     },
 ];
 async function execute(itemIndex) {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     const id = this.getNodeParameter('id', itemIndex).value;
     const endpoint = `/documents/${id}/`;
     const updateFields = this.getNodeParameter('update_fields', itemIndex, {});
+    const hasCustomFields = Object.prototype.hasOwnProperty.call(updateFields, 'custom_fields');
+    let customFields;
+    if (hasCustomFields) {
+        const existingDocument = (await transport_1.apiRequest.call(this, itemIndex, 'GET', endpoint));
+        const mergedCustomFields = new Map();
+        ((_a = existingDocument === null || existingDocument === void 0 ? void 0 : existingDocument.custom_fields) !== null && _a !== void 0 ? _a : []).forEach((customField) => {
+            mergedCustomFields.set(customField.field, customField);
+        });
+        ((_c = (_b = updateFields.custom_fields) === null || _b === void 0 ? void 0 : _b.values) !== null && _c !== void 0 ? _c : []).forEach((customField) => {
+            const fieldId = customField.field.value;
+            const value = customField.value;
+            if (value === null) {
+                mergedCustomFields.delete(fieldId);
+                return;
+            }
+            mergedCustomFields.set(fieldId, { field: fieldId, value });
+        });
+        customFields = Array.from(mergedCustomFields.values());
+    }
     const body = {
         archive_serial_number: updateFields.archive_serial_number,
-        correspondent: (_a = updateFields.correspondent) === null || _a === void 0 ? void 0 : _a.value,
+        correspondent: (_d = updateFields.correspondent) === null || _d === void 0 ? void 0 : _d.value,
         created: updateFields.created,
-        custom_fields: (_b = updateFields.custom_fields) === null || _b === void 0 ? void 0 : _b.values.map((customField) => ({
-            field: customField.field.value,
-            value: customField.value,
-        })),
-        document_type: (_c = updateFields.document_type) === null || _c === void 0 ? void 0 : _c.value,
-        storage_path: (_d = updateFields.storage_path) === null || _d === void 0 ? void 0 : _d.value,
+        custom_fields: customFields,
+        document_type: (_e = updateFields.document_type) === null || _e === void 0 ? void 0 : _e.value,
+        storage_path: (_f = updateFields.storage_path) === null || _f === void 0 ? void 0 : _f.value,
         tags: Object.prototype.hasOwnProperty.call(updateFields, 'tags')
-            ? (Array.isArray((_e = updateFields.tags) === null || _e === void 0 ? void 0 : _e.values) ? updateFields.tags.values : [(_f = updateFields.tags) === null || _f === void 0 ? void 0 : _f.values])
+            ? (Array.isArray((_g = updateFields.tags) === null || _g === void 0 ? void 0 : _g.values) ? updateFields.tags.values : [(_h = updateFields.tags) === null || _h === void 0 ? void 0 : _h.values])
                 .flatMap((tag) => {
                 var _a, _b, _c;
                 const value = (_c = (_b = (_a = tag === null || tag === void 0 ? void 0 : tag.tag) === null || _a === void 0 ? void 0 : _a.value) !== null && _b !== void 0 ? _b : tag === null || tag === void 0 ? void 0 : tag.tag) !== null && _c !== void 0 ? _c : tag;

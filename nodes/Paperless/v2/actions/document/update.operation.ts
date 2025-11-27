@@ -339,14 +339,40 @@ export async function execute(
 
 	const updateFields = this.getNodeParameter('update_fields', itemIndex, {}) as any;
 
+	const hasCustomFields = Object.prototype.hasOwnProperty.call(updateFields, 'custom_fields');
+
+	let customFields;
+
+	if (hasCustomFields) {
+		const existingDocument = (await apiRequest.call(this, itemIndex, 'GET', endpoint)) as any;
+
+		const mergedCustomFields = new Map<number, { field: number; value: any }>();
+
+		(existingDocument?.custom_fields ?? []).forEach((customField: any) => {
+			mergedCustomFields.set(customField.field, customField);
+		});
+
+		(updateFields.custom_fields?.values ?? []).forEach((customField: any) => {
+			const fieldId = customField.field.value;
+			const value = customField.value;
+
+			// Explicit null means remove the custom field from the document
+			if (value === null) {
+				mergedCustomFields.delete(fieldId);
+				return;
+			}
+
+			mergedCustomFields.set(fieldId, { field: fieldId, value });
+		});
+
+		customFields = Array.from(mergedCustomFields.values());
+	}
+
 	const body = {
 		archive_serial_number: updateFields.archive_serial_number,
 		correspondent: updateFields.correspondent?.value,
 		created: updateFields.created,
-		custom_fields: updateFields.custom_fields?.values.map((customField: any) => ({
-			field: customField.field.value,
-			value: customField.value,
-		})),
+		custom_fields: customFields,
 		document_type: updateFields.document_type?.value,
 		storage_path: updateFields.storage_path?.value,
 		// Only include tags when provided. Flatten supports both multiple Tag entries and a single Tag entry bound to an array.
